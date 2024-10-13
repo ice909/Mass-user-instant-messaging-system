@@ -1,11 +1,14 @@
 package main
 
 import (
-	"client/message"
 	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
+
+	"github.com/ice909/go-common/message"
+	"github.com/ice909/go-common/utils"
 )
 
 func login(userId int, userPwd string) (err error) {
@@ -35,9 +38,11 @@ func login(userId int, userPwd string) (err error) {
 
 	mes.Data = string(data)
 
+	// 将mes序列化
+	data, err = json.Marshal(mes)
+
 	// 先把data长度发送给服务器
-	var dataLen uint32
-	dataLen = uint32(len(data))
+	var dataLen uint32 = uint32(len(data))
 
 	var buf [4]byte
 	binary.BigEndian.PutUint32(buf[0:4], dataLen)
@@ -46,15 +51,25 @@ func login(userId int, userPwd string) (err error) {
 		fmt.Println("conn.Write(bytes) fail", err)
 		return
 	}
-	// fmt.Println("客户端发送消息的长度=", len(data), "内容=", string(data))
 
 	// 发送消息本身
 	_, err = conn.Write(data)
 	if err != nil {
-		fmt.Println("conn.Write(data) fail", err)
+		fmt.Println("client send msg fail", err)
 		return
 	}
 
 	// 这里还需要处理服务器端返回的消息
+	mes, err = utils.ReadPkg(conn)
+	if err != nil {
+		fmt.Println("utils.ReadPkg(conn) err=", err)
+		return
+	}
+	// 将mes的Data部分反序列化成LoginResMsg
+	var loginResMsg message.LoginResMsg
+	err = json.Unmarshal([]byte(mes.Data), &loginResMsg)
+	if loginResMsg.Code != 200 {
+		return errors.New(loginResMsg.Error)
+	}
 	return nil
 }

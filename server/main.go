@@ -1,11 +1,12 @@
 package main
 
 import (
-	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"net"
-	"server/message"
+
+	"github.com/ice909/go-common/message"
+	"github.com/ice909/go-common/utils"
 )
 
 // main
@@ -38,38 +39,79 @@ func process(conn net.Conn) {
 	// 循环读取客户端发送的数据
 	for {
 		fmt.Println("服务器在等待客户端发送消息...")
-		mes, err := readPkg(conn)
+		mes, err := utils.ReadPkg(conn)
 		if err != nil {
 			fmt.Println("readPkg err=", err)
 			return
 		}
-		fmt.Println("mes=", mes)
+		err = serverProcessMes(conn, &mes)
+		if err != nil {
+			fmt.Println("serverProcessMes err=", err)
+			return
+		}
 	}
 }
 
-func readPkg(conn net.Conn) (mes message.LoginMsg, err error) {
-	buf := make([]byte, 8096)
-	fmt.Println("读取客户端发送的数据...")
-	_, err = conn.Read(buf[:4])
+// 编写一个函数serverProcessLogin函数
+// 功能：专门处理登录请求
+func serverProcessLogin(conn net.Conn, mes *message.Message) (err error) {
+	// 从mes中取出mes.Data,并直接反序列化成LoginMsg
+	var loginMsg message.LoginMsg
+	err = json.Unmarshal([]byte(mes.Data), &loginMsg)
 	if err != nil {
-		fmt.Println("read pkg header fail, err=", err)
+		fmt.Println("serverProcessLogin() json.Unmarshal fail, err=", err)
 		return
 	}
 
-	// 根据buf[:4]转成一个uint32类型
-	var pkgLen uint32 = binary.BigEndian.Uint32(buf[0:4])
+	// 返回的消息
+	var resMes message.Message
+	resMes.Type = message.LoginResMsgType
 
-	n, err := conn.Read(buf[:pkgLen])
-	if n != int(pkgLen) || err != nil {
-		fmt.Println("read pkg dat fail, err = ", err)
-		return
+	// 再声明一个 LoginResMsg
+	var loginResMsg message.LoginResMsg
+
+	// 如果用户id=100，密码=123456，认为合法，否则不合法
+	if loginMsg.UserId == 100 && loginMsg.UserPwd == "123456" {
+		// 合法
+		loginResMsg.Code = 200
+	} else if loginMsg.UserId != 100 {
+		// 不合法
+		loginResMsg.Code = 500 // 500表示该用户不存在
+		loginResMsg.Error = "该用户不存在，请注册再使用..."
+	} else {
+		// 不合法
+		loginResMsg.Code = 403 // 403表示密码不正确
+		loginResMsg.Error = "密码不正确，请重新输入..."
 	}
-	// 把buf[:pkgLen]反序列化成message.Message
-	err = json.Unmarshal(buf[:pkgLen], &mes)
+
+	// 对loginResMsg序列化
+	data, err := json.Marshal(loginResMsg)
 	if err != nil {
-		fmt.Println("json.Unmarshal fail, err=", err)
+		fmt.Println("loginResMsg json.Marshal fail, err=", err)
 		return
 	}
+	resMes.Data = string(data)
+	// 对resMes序列化
+	data, err = json.Marshal(resMes)
+	if err != nil {
+		fmt.Println("resMes json.Marshal fail, err=", err)
+		return
+	}
+	err = utils.WritePkg(conn, data)
+	return
+}
 
+// 编写一个serverProcessMes函数
+// 功能：根据客户端发送消息种类不同，决定调用哪个函数来处理
+func serverProcessMes(conn net.Conn, mes *message.Message) (err error) {
+	switch mes.Type {
+	case message.LoginMsgType:
+		// 处理登录
+		err = serverProcessLogin(conn, mes)
+		// case message.RegisterMsgType:
+		// 处理注册
+	default:
+		fmt.Println("消息类型不存在，无法处理...")
+	}
 	return
 }

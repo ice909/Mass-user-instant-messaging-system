@@ -47,7 +47,7 @@ func main() {
 		// 先把登录函数写到login.go
 		err := login(userId, userPwd)
 		if err != nil {
-			fmt.Println("登录失败")
+			fmt.Println(err)
 		} else {
 			fmt.Println("登录成功")
 		}
