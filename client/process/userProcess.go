@@ -1,4 +1,4 @@
-package main
+package process
 
 import (
 	"encoding/binary"
@@ -11,7 +11,9 @@ import (
 	"github.com/ice909/go-common/utils"
 )
 
-func login(userId int, userPwd string) (err error) {
+type UserProcess struct{}
+
+func (userProcess UserProcess) Login(userId int, userPwd string) (err error) {
 	conn, err := net.Dial("tcp", "localhost:8889")
 	if err != nil {
 		fmt.Println("net.Dial err=", err)
@@ -71,5 +73,9 @@ func login(userId int, userPwd string) (err error) {
 	if loginResMsg.Code != 200 {
 		return errors.New(loginResMsg.Error)
 	}
-	return nil
+	go ProcessServerMes(conn)
+	// 显示登录成功菜单
+	for {
+		ShowMenu()
+	}
 }

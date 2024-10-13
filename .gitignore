@@ -1,3 +1,4 @@
-client/client
+client/main/main
+client/main/client
 server/main/server
 server/main/main
