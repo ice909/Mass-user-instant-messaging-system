@@ -1,3 +1,3 @@
-module gocode/web/Mass-user-instant-messaging-system/client
+module client
 
 go 1.23.0
