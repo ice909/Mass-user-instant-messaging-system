@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"server/model"
 
 	"github.com/ice909/go-common/message"
 	"github.com/ice909/go-common/utils"
@@ -30,19 +31,21 @@ func (userProcess UserProcess) ServerProcessLogin(mes *message.Message) (err err
 
 	// 再声明一个 LoginResMsg
 	var loginResMsg message.LoginResMsg
-
-	// 如果用户id=100，密码=123456，认为合法，否则不合法
-	if loginMsg.UserId == 100 && loginMsg.UserPwd == "123456" {
-		// 合法
-		loginResMsg.Code = 200
-	} else if loginMsg.UserId != 100 {
-		// 不合法
-		loginResMsg.Code = 500 // 500表示该用户不存在
-		loginResMsg.Error = "该用户不存在，请注册再使用..."
+	user, err := model.MyUserDao.Login(loginMsg.UserId, loginMsg.UserPwd)
+	if err != nil {
+		if err == model.ERROR_USER_NOTEXISTS {
+			loginResMsg.Code = 500
+			loginResMsg.Error = err.Error()
+		} else if err == model.ERROR_USER_PWD {
+			loginResMsg.Code = 403
+			loginResMsg.Error = err.Error()
+		} else {
+			loginResMsg.Code = 505
+			loginResMsg.Error = "服务器内部错误..."
+		}
 	} else {
-		// 不合法
-		loginResMsg.Code = 403 // 403表示密码不正确
-		loginResMsg.Error = "密码不正确，请重新输入..."
+		loginResMsg.Code = 200
+		fmt.Println(user, "登录成功")
 	}
 
 	// 对loginResMsg序列化
