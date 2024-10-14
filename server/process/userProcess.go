@@ -64,3 +64,49 @@ func (userProcess UserProcess) ServerProcessLogin(mes *message.Message) (err err
 	err = utils.WritePkg(userProcess.Conn, data)
 	return
 }
+
+func (userProcess UserProcess) ServerProcessRegister(mes *message.Message) (err error) {
+	// 从mes中取出mes.Data,并直接反序列化成RegisterMsg
+	var registerMsg message.RegisterMsg
+	err = json.Unmarshal([]byte(mes.Data), &registerMsg)
+	if err != nil {
+		fmt.Println("serverProcessRegister() json.Unmarshal fail, err=", err)
+		return
+	}
+
+	// 返回的消息
+	var resMes message.Message
+	resMes.Type = message.RegisterResMsgType
+
+	// 再声明一个 RegisterResMsg
+	var registerResMsg message.RegisterResMsg
+	err = model.MyUserDao.Register(registerMsg.User)
+	if err != nil {
+		if err == model.ERROR_USER_EXISTS {
+			registerResMsg.Code = 505
+			registerResMsg.Error = err.Error()
+		} else {
+			registerResMsg.Code = 500
+			registerResMsg.Error = "服务器内部错误..."
+		}
+	} else {
+		registerResMsg.Code = 200
+		registerResMsg.Error = "注册成功"
+	}
+
+	// 对registerResMsg序列化
+	data, err := json.Marshal(registerResMsg)
+	if err != nil {
+		fmt.Println("registerResMsg json.Marshal fail, err=", err)
+		return
+	}
+	resMes.Data = string(data)
+	// 对resMes序列化
+	data, err = json.Marshal(resMes)
+	if err != nil {
+		fmt.Println("resMes json.Marshal fail, err=", err)
+		return
+	}
+	err = utils.WritePkg(userProcess.Conn, data)
+	return
+}

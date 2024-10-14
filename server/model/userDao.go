@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/gomodule/redigo/redis"
+	"github.com/ice909/go-common/message"
 )
 
 var (
@@ -44,6 +45,26 @@ func (userDao UserDao) Login(userId int, userPwd string) (user *User, err error)
 	}
 	if user.UserPwd != userPwd {
 		err = ERROR_USER_PWD
+		return
+	}
+	return
+}
+
+func (userDao UserDao) Register(user message.User) (err error) {
+	conn := userDao.Pool.Get()
+	defer conn.Close()
+	_, err = userDao.GetUserById(conn, user.UserId)
+	if err == nil { // 用户已经存在
+		err = ERROR_USER_EXISTS
+		return
+	}
+	// 这时说明用户还没有注册
+	data, err := json.Marshal(user)
+	if err != nil {
+		return
+	}
+	_, err = conn.Do("HSET", "users", user.UserId, string(data))
+	if err != nil {
 		return
 	}
 	return
