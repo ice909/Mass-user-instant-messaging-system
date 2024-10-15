@@ -33,7 +33,6 @@ func (processor Processor) ServerProcessMes(mes *message.Message) (err error) {
 func (processor Processor) process2() {
 	// 循环读取客户端发送的数据
 	for {
-		fmt.Println("服务器在等待客户端发送消息...")
 		mes, err := utils.ReadPkg(processor.Conn)
 		if err != nil {
 			fmt.Println("readPkg err=", err)

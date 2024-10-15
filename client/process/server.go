@@ -1,10 +1,12 @@
 package process
 
 import (
+	"encoding/json"
 	"fmt"
 	"net"
 	"os"
 
+	"github.com/ice909/go-common/message"
 	"github.com/ice909/go-common/utils"
 )
 
@@ -36,13 +38,25 @@ func ShowMenu() {
 
 func ProcessServerMes(conn net.Conn) {
 	for {
-		fmt.Println("客户端正在等待读取服务器发送的消息")
 		mes, err := utils.ReadPkg(conn)
 		if err != nil {
 			fmt.Println("utils.ReadPkg(conn) err=", err)
 			return
 		}
 		// 如果读取到消息，又是下一步处理逻辑
-		fmt.Println("mes=", mes)
+		switch mes.Type {
+		case message.NotifyUserStatusMsgType: // 有人上线了
+			// 1. 取出 NotifyUserStatusMsg
+			var notifyUserStatusMsg message.NotifyUserStatusMsg
+			err := json.Unmarshal([]byte(mes.Data), &notifyUserStatusMsg)
+			if err != nil {
+				fmt.Println("json.Unmarshal([]byte(mes.Data), &notifyUserStatusMsg) err=", err)
+				return
+			}
+			// 2. 把这个用户的信息，状态保存到客户map[int]User中
+			updateUserStatus(&notifyUserStatusMsg)
+		default:
+			fmt.Println("服务器端返回了未知的消息类型")
+		}
 	}
 }

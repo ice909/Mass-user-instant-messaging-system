@@ -12,6 +12,8 @@ import (
 
 type UserProcess struct {
 	Conn net.Conn
+	// 增加一个字段，表示该Conn是哪个用户
+	UserId int
 }
 
 // 编写一个函数serverProcessLogin函数
@@ -45,6 +47,14 @@ func (userProcess UserProcess) ServerProcessLogin(mes *message.Message) (err err
 		}
 	} else {
 		loginResMsg.Code = 200
+		// 这里，因为用户登录成功，我们就把该登录成功的用户放入到userMgr中
+		userProcess.UserId = loginMsg.UserId
+		userMgr.AddOnlineUser(&userProcess)
+		userProcess.NotifyOthersOnlineUser(loginMsg.UserId)
+		// 将当前在线用户的id，放入到loginResMsg.UserIds
+		for id, _ := range userMgr.onlineUsers {
+			loginResMsg.UserIds = append(loginResMsg.UserIds, id)
+		}
 		fmt.Println(user, "登录成功")
 	}
 
@@ -109,4 +119,41 @@ func (userProcess UserProcess) ServerProcessRegister(mes *message.Message) (err 
 	}
 	err = utils.WritePkg(userProcess.Conn, data)
 	return
+}
+
+// 通知所有用户
+func (userProcess UserProcess) NotifyOthersOnlineUser(userId int) {
+	// 遍历onlineUsers，然后一个一个发送NotifyUserStatusMsg
+	for id, up := range userMgr.onlineUsers {
+		if id == userId {
+			continue
+		}
+		up.NotifyMeOnline(userId)
+	}
+}
+
+func (userProcess UserProcess) NotifyMeOnline(userId int) {
+	// 组装NotifyUserStatusMsg
+	var mes message.Message
+	mes.Type = message.NotifyUserStatusMsgType
+	var notifyUserStatusMsg message.NotifyUserStatusMsg
+	notifyUserStatusMsg.UserId = userId
+	notifyUserStatusMsg.Status = message.UserOnline
+
+	data, err := json.Marshal(notifyUserStatusMsg)
+	if err != nil {
+		fmt.Println("NotifyMeOnline json.Marshal fail, err=", err)
+		return
+	}
+	mes.Data = string(data)
+	data, err = json.Marshal(mes)
+	if err != nil {
+		fmt.Println("NotifyMeOnline json.Marshal fail, err=", err)
+		return
+	}
+	err = utils.WritePkg(userProcess.Conn, data)
+	if err != nil {
+		fmt.Println("NotifyMeOnline WritePkg fail, err=", err)
+		return
+	}
 }
