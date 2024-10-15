@@ -1,6 +1,7 @@
 package process
 
 import (
+	"client/model"
 	"fmt"
 
 	"github.com/ice909/go-common/message"
@@ -8,6 +9,7 @@ import (
 
 // 客户端要维护一个在线用户的map
 var onlineUsers map[int]*message.User = make(map[int]*message.User, 0)
+var curUser model.CurUser
 
 // 在客户端显示在线的用户
 func outputOnlineUser() {

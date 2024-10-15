@@ -73,6 +73,9 @@ func (userProcess UserProcess) Login(userId int, userPwd string) (err error) {
 	if loginResMsg.Code != 200 {
 		return errors.New(loginResMsg.Error)
 	}
+	curUser.Conn = conn
+	curUser.UserId = userId
+	curUser.UserStatus = message.UserOnline
 	// 显示当前在线用户的列表
 	fmt.Println("当前在线用户列表如下:")
 	for _, v := range loginResMsg.UserIds {

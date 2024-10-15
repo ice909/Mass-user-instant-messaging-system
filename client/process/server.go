@@ -20,12 +20,16 @@ func ShowMenu() {
 	fmt.Println("--------------------------------------------")
 	fmt.Println("请选择(1-4):")
 	var key int
+	smsProcess := &SmsProcess{}
 	fmt.Scanf("%d\n", &key)
 	switch key {
 	case 1:
-		fmt.Println("显示在线用户列表")
+		outputOnlineUser()
 	case 2:
-		fmt.Println("发送消息")
+		fmt.Println("请输入你想对大家说的话:")
+		var content string
+		fmt.Scanf("%s\n", &content)
+		smsProcess.SendGroupMes(content)
 	case 3:
 		fmt.Println("信息列表")
 	case 4:
@@ -55,6 +59,8 @@ func ProcessServerMes(conn net.Conn) {
 			}
 			// 2. 把这个用户的信息，状态保存到客户map[int]User中
 			updateUserStatus(&notifyUserStatusMsg)
+		case message.SmsMsgType: // 有人群发消息
+			outputGroupMes(&mes)
 		default:
 			fmt.Println("服务器端返回了未知的消息类型")
 		}

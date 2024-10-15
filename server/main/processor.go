@@ -24,6 +24,9 @@ func (processor Processor) ServerProcessMes(mes *message.Message) (err error) {
 	case message.RegisterMsgType: // 处理注册
 		up := &process.UserProcess{Conn: processor.Conn}
 		err = up.ServerProcessRegister(mes)
+	case message.SmsMsgType: // 处理群发消息
+		sp := &process.SmsProcess{}
+		err = sp.SendGroupMes(mes)
 	default:
 		fmt.Println("消息类型不存在，无法处理...")
 	}
@@ -35,7 +38,9 @@ func (processor Processor) process2() {
 	for {
 		mes, err := utils.ReadPkg(processor.Conn)
 		if err != nil {
-			fmt.Println("readPkg err=", err)
+			if err.Error() != "EOF" {
+				fmt.Println("readPkg err=", err)
+			}
 			return
 		}
 		processor := &Processor{Conn: processor.Conn}
