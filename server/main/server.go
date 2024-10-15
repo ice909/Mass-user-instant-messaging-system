@@ -22,7 +22,6 @@ func main() {
 
 	// 监听成功,等待客户端连接服务器
 	for {
-		fmt.Println("等待客户端来连接服务器...")
 		conn, err := listen.Accept()
 		if err != nil {
 			fmt.Println("listen.Accept err=", err)

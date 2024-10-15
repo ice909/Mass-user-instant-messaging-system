@@ -12,7 +12,7 @@ import (
 
 // 显示登录成功后的界面
 func ShowMenu() {
-	fmt.Println("---------------恭喜xxx登录成功---------------")
+	fmt.Printf("---------------恭喜%d登录成功---------------\n", curUser.UserId)
 	fmt.Println("\t\t1. 显示在线用户列表")
 	fmt.Println("\t\t2. 发送消息")
 	fmt.Println("\t\t3. 信息列表")

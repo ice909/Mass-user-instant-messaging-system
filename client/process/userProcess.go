@@ -64,7 +64,9 @@ func (userProcess UserProcess) Login(userId int, userPwd string) (err error) {
 	// 这里还需要处理服务器端返回的消息
 	mes, err = utils.ReadPkg(conn)
 	if err != nil {
-		fmt.Println("utils.ReadPkg(conn) err=", err)
+		if err.Error() != "EOF" {
+			fmt.Println("utils.ReadPkg(conn) err=", err)
+		}
 		return
 	}
 	// 将mes的Data部分反序列化成LoginResMsg

@@ -52,7 +52,7 @@ func (userProcess UserProcess) ServerProcessLogin(mes *message.Message) (err err
 		userMgr.AddOnlineUser(&userProcess)
 		userProcess.NotifyOthersOnlineUser(loginMsg.UserId)
 		// 将当前在线用户的id，放入到loginResMsg.UserIds
-		for id, _ := range userMgr.onlineUsers {
+		for id := range userMgr.onlineUsers {
 			loginResMsg.UserIds = append(loginResMsg.UserIds, id)
 		}
 		fmt.Println(user, "登录成功")
